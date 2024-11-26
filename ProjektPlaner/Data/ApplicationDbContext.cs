@@ -10,6 +10,6 @@ namespace ProjektPlaner.Data
             : base(options)
         {
         }
-        public DbSet<ProjektPlaner.Models.LogIn> LogIn { get; set; } = default!;
+        public DbSet<ProjektPlaner.Models.CalendarElement> CalendarElement { get; set; } = default!;
     }
 }
