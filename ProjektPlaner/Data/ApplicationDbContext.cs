@@ -11,5 +11,6 @@ namespace ProjektPlaner.Data
         {
         }
         public DbSet<ProjektPlaner.Models.CalendarElement> CalendarElement { get; set; } = default!;
+        public DbSet<ProjektPlaner.Models.CalendarGroup> CalendarGroup { get; set; } = default!;
     }
 }
