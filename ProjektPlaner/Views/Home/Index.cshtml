@@ -1,4 +1,8 @@
 ﻿@model List<DateTime>
+@{
+    // Pobierz listę świąt z ViewData
+    var holidays = ViewData["Holidays"] as List<DateTime> ?? new List<DateTime>();
+}
 
 <!DOCTYPE html>
 <html lang="pl">
@@ -23,12 +27,17 @@
             background-color: #f0f0f0;
             color: #a00;
         }
+        .holiday {
+            background-color: #ffeeba;
+            color: #d9534f;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container mt-5">
         <header class="mb-4">
-            <h1 class="text-center">Kalendarz na @(Model?.FirstOrDefault().ToString("MMMM yyyy") ?? "nieznany miesiąc")</h1>
+            <h1 class="text-center">Kalendarz na @DateTime.Now.ToString("MMMM yyyy")</h1>
         </header>
 
         <main>
@@ -45,50 +54,47 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model == null || !Model.Any())
-                    {
-                        <tr>
-                            <td colspan="7">Brak danych do wyświetlenia.</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        var days = Model;
-                        int currentDayOfWeek = (int)days[0].DayOfWeek;
-
-                        // Adjust for Monday as the first day of the week
+                    @{
+                        int currentDayOfWeek = (int)Model[0].DayOfWeek;
                         currentDayOfWeek = currentDayOfWeek == 0 ? 6 : currentDayOfWeek - 1;
-
                         int dayIndex = 0;
 
-                        // Fill first week
+                        // Pierwszy tydzień
                         <tr>
                             @for (int i = 0; i < currentDayOfWeek; i++)
                             {
                                 <td></td>
                             }
 
-                            @while (dayIndex < days.Count && currentDayOfWeek < 7)
+                            @while (dayIndex < Model.Count && currentDayOfWeek < 7)
                             {
-                                var day = days[dayIndex];
+                                var day = Model[dayIndex];
                                 var isWeekend = day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday;
-                                <td class="@(isWeekend ? "weekend" : "")">@day.Day</td>
+                                var isHoliday = holidays.Contains(day);
+
+                                <td class="@(isHoliday ? "holiday" : (isWeekend ? "weekend" : ""))">
+                                    @day.Day
+                                </td>
                                 dayIndex++;
                                 currentDayOfWeek++;
                             }
                         </tr>
 
-                        // Fill remaining weeks
-                        while (dayIndex < days.Count)
+                        // Pozostałe tygodnie
+                        while (dayIndex < Model.Count)
                         {
                             <tr>
                                 @for (int i = 0; i < 7; i++)
                                 {
-                                    if (dayIndex < days.Count)
+                                    if (dayIndex < Model.Count)
                                     {
-                                        var day = days[dayIndex];
+                                        var day = Model[dayIndex];
                                         var isWeekend = day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday;
-                                        <td class="@(isWeekend ? "weekend" : "")">@day.Day</td>
+                                        var isHoliday = holidays.Contains(day);
+
+                                        <td class="@(isHoliday ? "holiday" : (isWeekend ? "weekend" : ""))">
+                                            @day.Day
+                                        </td>
                                         dayIndex++;
                                     }
                                     else
