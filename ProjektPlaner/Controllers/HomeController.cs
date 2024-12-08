@@ -8,6 +8,7 @@ namespace ProjektPlaner.Controllers
     {
         private readonly ILogger<HomeController> _logger;
 
+
         public HomeController(ILogger<HomeController> logger)
         {
             _logger = logger;
@@ -15,8 +16,20 @@ namespace ProjektPlaner.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            // Pobierz aktualn¹ datê
+            var today = DateTime.Today;
+
+            // Liczba dni w bie¿¹cym miesi¹cu
+            int daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
+
+            // Tworzenie modelu zawieraj¹cego wszystkie dni miesi¹ca
+            var calendarDays = Enumerable.Range(1, daysInMonth)
+                                         .Select(day => new DateTime(today.Year, today.Month, day))
+                                         .ToList();
+
+            return View(calendarDays);
         }
+
 
         public IActionResult Privacy()
         {
