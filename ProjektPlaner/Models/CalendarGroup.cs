@@ -27,5 +27,7 @@ namespace ProjektPlaner.Models
         [Display(Name = "Admins")]
         public IList<IdentityUser> Administrators { get; set; } = new List<IdentityUser>();
 
+        public List<CalendarElement> CalendarElements { get; set; } = new List<CalendarElement>();
+
     }
 }

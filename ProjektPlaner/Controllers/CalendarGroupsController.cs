@@ -69,11 +69,9 @@ namespace ProjektPlaner.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,Description")] CalendarGroup calendarGroup)
         {
-            // Get the current user's ID
             string currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(currentUserId))
             {
-                // If there's no logged-in user, we cannot create a group.
                 ModelState.AddModelError("", "You must be logged in to create a group.");
                 return View(calendarGroup);
             }

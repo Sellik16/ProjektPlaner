@@ -34,6 +34,13 @@ namespace ProjektPlaner.Data
                     "CalendarGroupAdministrator",
                     j => j.HasOne<IdentityUser>().WithMany().HasForeignKey("AdminId"),
                     j => j.HasOne<CalendarGroup>().WithMany().HasForeignKey("CalendarGroupId"));
-        }
+
+            builder.Entity<CalendarElement>()
+                .HasOne(e => e.Group)
+                .WithMany()
+                .HasForeignKey(e => e.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+        
+    }
     }
 }

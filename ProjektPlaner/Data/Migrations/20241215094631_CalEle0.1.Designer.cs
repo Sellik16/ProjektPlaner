@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjektPlaner.Data;
 
@@ -11,9 +12,11 @@ using ProjektPlaner.Data;
 namespace ProjektPlaner.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241215094631_CalEle0.1")]
+    partial class CalEle01
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -262,10 +265,8 @@ namespace ProjektPlaner.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("CalendarGroupId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -291,8 +292,6 @@ namespace ProjektPlaner.Data.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CalendarGroupId");
 
                     b.HasIndex("GroupId");
 
@@ -411,14 +410,9 @@ namespace ProjektPlaner.Data.Migrations
 
             modelBuilder.Entity("ProjektPlaner.Models.CalendarElement", b =>
                 {
-                    b.HasOne("ProjektPlaner.Models.CalendarGroup", null)
-                        .WithMany("CalendarElements")
-                        .HasForeignKey("CalendarGroupId");
-
                     b.HasOne("ProjektPlaner.Models.CalendarGroup", "Group")
                         .WithMany()
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("GroupId");
 
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithMany()
@@ -436,11 +430,6 @@ namespace ProjektPlaner.Data.Migrations
                         .HasForeignKey("FounderId");
 
                     b.Navigation("Founder");
-                });
-
-            modelBuilder.Entity("ProjektPlaner.Models.CalendarGroup", b =>
-                {
-                    b.Navigation("CalendarElements");
                 });
 #pragma warning restore 612, 618
         }

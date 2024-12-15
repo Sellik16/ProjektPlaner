@@ -23,11 +23,28 @@ namespace ProjektPlaner.Controllers
         // GET: CalendarElements
         public async Task<IActionResult> Index()
         {
-            string FounderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return View(await _context.CalendarGroup
-                .Include(c => c.Founder)
-                .Where(c => c.FounderId == FounderId)
-                .ToListAsync());
+            string currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return View(new List<CalendarElement>());
+            }
+
+            var userGroupIds = await _context.CalendarGroup
+                .Where(g => g.FounderId == currentUserId
+                         || g.Users.Any(u => u.Id == currentUserId)
+                         || g.Administrators.Any(a => a.Id == currentUserId))
+                .Select(g => g.Id)
+                .ToListAsync();
+
+            var elements = await _context.CalendarElement
+                .Include(e => e.Group)
+                .Include(e => e.User)
+                .Where(e => e.UserId == currentUserId
+                         || (e.GroupId.HasValue && userGroupIds.Contains(e.GroupId.Value)))
+                .ToListAsync();
+
+            return View(elements);
         }
 
         // GET: CalendarElements/Details/5
@@ -49,28 +66,109 @@ namespace ProjektPlaner.Controllers
             return View(calendarElement);
         }
 
-        // GET: CalendarElements/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id");
+            string currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userGroups = await _context.CalendarGroup
+                .Include(g => g.Users)
+                .Include(g => g.Administrators)
+                .Where(g => g.Users.Any(u => u.Id == currentUserId)
+                         || g.Administrators.Any(a => a.Id == currentUserId)
+                         || g.FounderId == currentUserId)
+                .ToListAsync();
+
+            var groupSelectList = new List<SelectListItem>
+                {
+                    new SelectListItem("No Group", "0")
+                };
+            groupSelectList.AddRange(userGroups.Select(g => new SelectListItem(g.Name, g.Id.ToString())));
+
+            ViewData["GroupId"] = groupSelectList;
+
             return View();
         }
 
         // POST: CalendarElements/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,StartDate,EndDate,Location,Recurrence,UserId,GroupId")] CalendarElement calendarElement)
+        public async Task<IActionResult> Create([Bind("Id,Name,Description,StartDate,EndDate,Location,GroupId")] CalendarElement calendarElement)
         {
-            if (ModelState.IsValid)
+            string currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserId))
             {
+                ModelState.AddModelError("", "You must be logged in to create a calendar element.");
+                await PopulateGroupDropdown(currentUserId, calendarElement.GroupId);
+                return View(calendarElement);
+            }
+            var currentUser = await _context.Users.FindAsync(currentUserId);
+            if (currentUser == null)
+            {
+                ModelState.AddModelError("", "Current user not found in the database.");
+                await PopulateGroupDropdown(currentUserId, calendarElement.GroupId);
+                return View(calendarElement);
+            }
+
+            if (calendarElement.GroupId == 0)
+            {
+                calendarElement.GroupId = null;
+            }
+
+            if (calendarElement.GroupId.HasValue)
+            {
+                var selectedGroup = await _context.CalendarGroup
+                    .Include(g => g.Users)
+                    .Include(g => g.Administrators)
+                    .FirstOrDefaultAsync(g => g.Id == calendarElement.GroupId.Value);
+
+                if (selectedGroup == null)
+                {
+                    ModelState.AddModelError("", "The selected group does not exist.");
+                }
+                else if (
+                    !selectedGroup.Users.Any(u => u.Id == currentUserId) &&
+                    !selectedGroup.Administrators.Any(a => a.Id == currentUserId) &&
+                    selectedGroup.FounderId != currentUserId
+                )
+                {
+                    ModelState.AddModelError("", "You are not authorized to add elements to this group.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await PopulateGroupDropdown(currentUserId, calendarElement.GroupId);
+                return View(calendarElement);
+            }
+            else
+            {
+                calendarElement.UserId = currentUserId;
+
                 _context.Add(calendarElement);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", calendarElement.UserId);
-            return View(calendarElement);
+
+            
+        }
+
+        private async Task PopulateGroupDropdown(string currentUserId, int? selectedGroupId)
+        {
+            var userGroups = await _context.CalendarGroup
+                .Include(g => g.Users)
+                .Include(g => g.Administrators)
+                .Where(g => g.Users.Any(u => u.Id == currentUserId)
+                         || g.Administrators.Any(a => a.Id == currentUserId)
+                         || g.FounderId == currentUserId)
+                .ToListAsync();
+
+            var groupSelectList = new List<SelectListItem>
+    {
+        new SelectListItem("No Group", "0")
+    };
+            groupSelectList.AddRange(userGroups.Select(g => new SelectListItem(g.Name, g.Id.ToString())));
+
+            var selectedValue = selectedGroupId.HasValue ? selectedGroupId.Value.ToString() : "0";
+            ViewData["GroupId"] = new SelectList(groupSelectList, "Value", "Text", selectedValue);
         }
 
         // GET: CalendarElements/Edit/5
