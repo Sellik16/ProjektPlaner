@@ -60,7 +60,22 @@
     </style>
 </head>
 <body>
-    <h1 class="text-center">Kalendarz na @today.ToString("MMMM yyyy")</h1>
+    @using System.Globalization
+
+    @{
+        var currentDisplayedYear = (int)ViewBag.DisplayedYear;
+        var currentDisplayedMonth = (int)ViewBag.DisplayedMonth;
+        var currentDisplayedDate = new DateTime(currentDisplayedYear, currentDisplayedMonth, 1);
+
+        var prevMonthDate = currentDisplayedDate.AddMonths(-1);
+        var nextMonthDate = currentDisplayedDate.AddMonths(1);
+    }
+
+    <h1 class="text-center">
+        <a href="@Url.Action("Index", new { month = prevMonthDate.Month, year = prevMonthDate.Year })" style="text-decoration: none;">&laquo;</a>
+        Kalendarz na @currentDisplayedDate.ToString("MMMM yyyy", CultureInfo.CreateSpecificCulture("pl-PL"))
+        <a href="@Url.Action("Index", new { month = nextMonthDate.Month, year = nextMonthDate.Year })" style="text-decoration: none;">&raquo;</a>
+    </h1>
 
     <table>
         <thead>

@@ -20,33 +20,46 @@ namespace ProjektPlaner.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? month, int? year)
         {
-            // Pobieramy bie¿¹cy miesi¹c
-            var today = DateTime.Today;
-            int daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
+            // Ustal datê wyœwietlanego miesi¹ca
+            var baseDate = DateTime.Today;
+            int displayMonth = month ?? baseDate.Month;
+            int displayYear = year ?? baseDate.Year;
+
+            // Jeœli miesi¹c wyjdzie poza zakres, odpowiednio skoryguj
+            if (displayMonth < 1)
+            {
+                displayMonth = 12;
+                displayYear -= 1;
+            }
+            else if (displayMonth > 12)
+            {
+                displayMonth = 1;
+                displayYear += 1;
+            }
+
+            var dateToShow = new DateTime(displayYear, displayMonth, 1);
+            int daysInMonth = DateTime.DaysInMonth(displayYear, displayMonth);
 
             string currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Jeœli u¿ytkownik nie jest zalogowany
+            // Logika jak dotychczas, z wykorzystaniem dateToShow zamiast DateTime.Today
             if (string.IsNullOrEmpty(currentUserId))
             {
-                // Pobieramy ID grupy "wszyscy"
                 var everyoneGroupId = await _context.CalendarGroup
                     .Where(g => g.Name == "wszyscy")
                     .Select(g => g.Id)
                     .FirstOrDefaultAsync();
 
-                // Pobieramy tylko wydarzenia z grupy "wszyscy"
                 var calendarElements = await _context.CalendarElement
                     .Where(e => e.GroupId == everyoneGroupId)
                     .ToListAsync();
 
-                // Tworzymy kalendarz dla bie¿¹cego miesi¹ca
                 var calendarDays = Enumerable.Range(1, daysInMonth)
                     .Select(day =>
                     {
-                        var dayDate = new DateTime(today.Year, today.Month, day);
+                        var dayDate = new DateTime(displayYear, displayMonth, day);
                         var eventsForDay = calendarElements
                             .Where(e => e.StartDate.Date == dayDate)
                             .Select(e => e.Name)
@@ -60,49 +73,49 @@ namespace ProjektPlaner.Controllers
                     })
                     .ToList();
 
-
+                ViewBag.DisplayedMonth = displayMonth;
+                ViewBag.DisplayedYear = displayYear;
                 return View(calendarDays);
             }
+            else
+            {
+                var userGroupIds = await _context.CalendarGroup
+                    .Where(g => g.FounderId == currentUserId
+                             || g.Users.Any(u => u.Id == currentUserId)
+                             || g.Administrators.Any(a => a.Id == currentUserId))
+                    .Select(g => g.Id)
+                    .ToListAsync();
 
-            // Obs³uga zalogowanego u¿ytkownika
-            var userGroupIds = await _context.CalendarGroup
-                .Where(g => g.FounderId == currentUserId
-                         || g.Users.Any(u => u.Id == currentUserId)
-                         || g.Administrators.Any(a => a.Id == currentUserId))
-                .Select(g => g.Id)
-                .ToListAsync();
+                var calendarElementsForUser = await _context.CalendarElement
+                    .Include(e => e.Group)
+                    .Include(e => e.User)
+                    .Where(e => e.UserId == currentUserId
+                             || (e.GroupId.HasValue && userGroupIds.Contains(e.GroupId.Value)))
+                    .ToListAsync();
 
-            // Pobieranie wydarzeñ dla u¿ytkownika i jego grup
-            var calendarElementsForUser = await _context.CalendarElement
-                .Include(e => e.Group)
-                .Include(e => e.User)
-                .Where(e => e.UserId == currentUserId
-                         || (e.GroupId.HasValue && userGroupIds.Contains(e.GroupId.Value)))
-                .ToListAsync();
-
-            // Tworzenie kalendarza z dniami miesi¹ca
-            // Pobraæ wszystkie wydarzenia na dany dzieñ
-            var calendarDaysWithEvents = Enumerable.Range(1, daysInMonth)
-                .Select(day =>
-                {
-                    var dayDate = new DateTime(today.Year, today.Month, day);
-                    var eventsForDay = calendarElementsForUser
-                        .Where(e => e.StartDate.Date == dayDate)
-                        .Select(e => e.Name)
-                        .ToList();
-
-                    return new CalendarDayViewModel
+                var calendarDaysWithEvents = Enumerable.Range(1, daysInMonth)
+                    .Select(day =>
                     {
-                        Date = dayDate,
-                        EventNames = eventsForDay
-                    };
-                })
-                .ToList();
+                        var dayDate = new DateTime(displayYear, displayMonth, day);
+                        var eventsForDay = calendarElementsForUser
+                            .Where(e => e.StartDate.Date == dayDate)
+                            .Select(e => e.Name)
+                            .ToList();
 
+                        return new CalendarDayViewModel
+                        {
+                            Date = dayDate,
+                            EventNames = eventsForDay
+                        };
+                    })
+                    .ToList();
 
-
-            return View(calendarDaysWithEvents);
+                ViewBag.DisplayedMonth = displayMonth;
+                ViewBag.DisplayedYear = displayYear;
+                return View(calendarDaysWithEvents);
+            }
         }
+
 
 
         public async Task<IActionResult> Calendar()
