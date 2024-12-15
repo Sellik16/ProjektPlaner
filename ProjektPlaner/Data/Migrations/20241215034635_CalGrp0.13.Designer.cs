@@ -12,8 +12,8 @@ using ProjektPlaner.Data;
 namespace ProjektPlaner.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241208201028_GroupsAdd_0.1")]
-    partial class GroupsAdd_01
+    [Migration("20241215034635_CalGrp0.13")]
+    partial class CalGrp013
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,36 @@ namespace ProjektPlaner.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("CalendarGroupAdministrator", b =>
+                {
+                    b.Property<string>("AdminId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("CalendarGroupId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AdminId", "CalendarGroupId");
+
+                    b.HasIndex("CalendarGroupId");
+
+                    b.ToTable("CalendarGroupAdministrator");
+                });
+
+            modelBuilder.Entity("CalendarGroupUser", b =>
+                {
+                    b.Property<int>("CalendarGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("CalendarGroupId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CalendarGroupUser");
+                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -85,12 +115,6 @@ namespace ProjektPlaner.Data.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CalendarGroupId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("CalendarGroupId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -136,10 +160,6 @@ namespace ProjektPlaner.Data.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CalendarGroupId");
-
-                    b.HasIndex("CalendarGroupId1");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -247,16 +267,29 @@ namespace ProjektPlaner.Data.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Location")
+                    b.Property<string>("GroupId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("GroupId1")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Recurrence")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("StartDate")
@@ -267,6 +300,8 @@ namespace ProjektPlaner.Data.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GroupId1");
 
                     b.HasIndex("UserId");
 
@@ -300,6 +335,36 @@ namespace ProjektPlaner.Data.Migrations
                     b.ToTable("CalendarGroup");
                 });
 
+            modelBuilder.Entity("CalendarGroupAdministrator", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjektPlaner.Models.CalendarGroup", null)
+                        .WithMany()
+                        .HasForeignKey("CalendarGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CalendarGroupUser", b =>
+                {
+                    b.HasOne("ProjektPlaner.Models.CalendarGroup", null)
+                        .WithMany()
+                        .HasForeignKey("CalendarGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -307,17 +372,6 @@ namespace ProjektPlaner.Data.Migrations
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
-                {
-                    b.HasOne("ProjektPlaner.Models.CalendarGroup", null)
-                        .WithMany("Administrators")
-                        .HasForeignKey("CalendarGroupId");
-
-                    b.HasOne("ProjektPlaner.Models.CalendarGroup", null)
-                        .WithMany("Users")
-                        .HasForeignKey("CalendarGroupId1");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -364,11 +418,19 @@ namespace ProjektPlaner.Data.Migrations
 
             modelBuilder.Entity("ProjektPlaner.Models.CalendarElement", b =>
                 {
+                    b.HasOne("ProjektPlaner.Models.CalendarGroup", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Group");
 
                     b.Navigation("User");
                 });
@@ -380,13 +442,6 @@ namespace ProjektPlaner.Data.Migrations
                         .HasForeignKey("FounderId");
 
                     b.Navigation("Founder");
-                });
-
-            modelBuilder.Entity("ProjektPlaner.Models.CalendarGroup", b =>
-                {
-                    b.Navigation("Administrators");
-
-                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }

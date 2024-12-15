@@ -15,14 +15,17 @@ namespace ProjektPlaner.Models
         [StringLength(100, ErrorMessage = "The {0} must be at max {1} characters long.")]
         [Display(Name = "Description")]
         public string? Description { get; set; }
-        [Display(Name = "Username")]
-        public string? FounderId { get; set; } 
+        [Display(Name = "Creator")]
+
+        public string? FounderId { get; set; }
 
         public IdentityUser? Founder { get; set; }
 
-        public ICollection<IdentityUser>? Users { get; set; }
+        [Display(Name = "Members")]
+        public IList<IdentityUser> Users { get; set; } = new List<IdentityUser>();
 
-        public ICollection<IdentityUser>? Administrators { get; set; }
+        [Display(Name = "Admins")]
+        public IList<IdentityUser> Administrators { get; set; } = new List<IdentityUser>();
 
     }
 }

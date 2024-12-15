@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -22,8 +23,11 @@ namespace ProjektPlaner.Controllers
         // GET: CalendarElements
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.CalendarElement.Include(c => c.User);
-            return View(await applicationDbContext.ToListAsync());
+            string FounderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return View(await _context.CalendarGroup
+                .Include(c => c.Founder)
+                .Where(c => c.FounderId == FounderId)
+                .ToListAsync());
         }
 
         // GET: CalendarElements/Details/5
@@ -57,7 +61,7 @@ namespace ProjektPlaner.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,StartDate,EndDate,Location,UserId")] CalendarElement calendarElement)
+        public async Task<IActionResult> Create([Bind("Id,Name,Description,StartDate,EndDate,Location,Recurrence,UserId,GroupId")] CalendarElement calendarElement)
         {
             if (ModelState.IsValid)
             {
@@ -91,7 +95,7 @@ namespace ProjektPlaner.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,StartDate,EndDate,Location,UserId")] CalendarElement calendarElement)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,StartDate,EndDate,Location,Recurrence,UserId,GroupId")] CalendarElement calendarElement)
         {
             if (id != calendarElement.Id)
             {
@@ -160,5 +164,5 @@ namespace ProjektPlaner.Controllers
         {
             return _context.CalendarElement.Any(e => e.Id == id);
         }
-    }
+        }
 }

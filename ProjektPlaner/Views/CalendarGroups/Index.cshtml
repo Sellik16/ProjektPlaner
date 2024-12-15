@@ -21,6 +21,12 @@
             <th>
                 @Html.DisplayNameFor(model => model.FounderId)
             </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Users)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Administrators)
+            </th>
             <th></th>
         </tr>
     </thead>
@@ -34,12 +40,22 @@
                 @Html.DisplayFor(modelItem => item.Description)
             </td>
             <td>
-                    @Html.DisplayFor(modelItem => item.Founder.Email)
+                @Html.DisplayFor(modelItem => item.Founder.Email)
+            </td>
+            <td>
+                @foreach (var user in item.Users)
+                {
+                        @user.Email<br />
+                    }
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Administrators)
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
                 <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a> |
+                <a asp-action="AddUser" asp-route-id="@item.Id">Add User</a>
             </td>
         </tr>
 }

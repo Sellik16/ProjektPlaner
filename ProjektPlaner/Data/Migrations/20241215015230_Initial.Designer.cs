@@ -12,8 +12,8 @@ using ProjektPlaner.Data;
 namespace ProjektPlaner.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241208202136_GroupsAdd_0.4")]
-    partial class GroupsAdd_04
+    [Migration("20241215015230_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -247,16 +247,29 @@ namespace ProjektPlaner.Data.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Location")
+                    b.Property<string>("GroupId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("GroupId1")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Recurrence")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("StartDate")
@@ -267,6 +280,8 @@ namespace ProjektPlaner.Data.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GroupId1");
 
                     b.HasIndex("UserId");
 
@@ -364,11 +379,19 @@ namespace ProjektPlaner.Data.Migrations
 
             modelBuilder.Entity("ProjektPlaner.Models.CalendarElement", b =>
                 {
+                    b.HasOne("ProjektPlaner.Models.CalendarGroup", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Group");
 
                     b.Navigation("User");
                 });

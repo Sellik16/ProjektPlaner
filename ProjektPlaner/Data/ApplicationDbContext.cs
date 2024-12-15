@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjektPlaner.Models;
 
@@ -10,7 +11,29 @@ namespace ProjektPlaner.Data
             : base(options)
         {
         }
-        public DbSet<ProjektPlaner.Models.CalendarElement> CalendarElement { get; set; } = default!;
-        public DbSet<ProjektPlaner.Models.CalendarGroup> CalendarGroup { get; set; } = default!;
+
+        public DbSet<CalendarElement> CalendarElement { get; set; } = default!;
+        public DbSet<CalendarGroup> CalendarGroup { get; set; } = default!;
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<CalendarGroup>()
+                .HasMany(g => g.Users)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>(
+                    "CalendarGroupUser",
+                    j => j.HasOne<IdentityUser>().WithMany().HasForeignKey("UserId"),
+                    j => j.HasOne<CalendarGroup>().WithMany().HasForeignKey("CalendarGroupId"));
+
+            builder.Entity<CalendarGroup>()
+                .HasMany(g => g.Administrators)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>(
+                    "CalendarGroupAdministrator",
+                    j => j.HasOne<IdentityUser>().WithMany().HasForeignKey("AdminId"),
+                    j => j.HasOne<CalendarGroup>().WithMany().HasForeignKey("CalendarGroupId"));
+        }
     }
 }

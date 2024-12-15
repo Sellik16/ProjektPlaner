@@ -28,7 +28,13 @@
                 @Html.DisplayNameFor(model => model.Location)
             </th>
             <th>
+                @Html.DisplayNameFor(model => model.Recurrence)
+            </th>
+            <th>
                 @Html.DisplayNameFor(model => model.User)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.GroupId)
             </th>
             <th></th>
         </tr>
@@ -52,7 +58,13 @@
                 @Html.DisplayFor(modelItem => item.Location)
             </td>
             <td>
+                @Html.DisplayFor(modelItem => item.Recurrence)
+            </td>
+            <td>
                 @Html.DisplayFor(modelItem => item.User.Id)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.GroupId)
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |

@@ -1,0 +1,20 @@
+﻿@{
+    ViewData["Title"] = "AddUser";
+}
+
+<h1>Add User to Group</h1>
+
+@if (ViewBag.Message != null)
+{
+    <div class="alert alert-info">@ViewBag.Message</div>
+}
+
+<form asp-action="AddUser" method="post">
+    <input type="hidden" name="Id" value="@ViewBag.GroupId" />
+    <div class="form-group">
+        <label for="UserId">Select User to Add:</label>
+        <select name="userId" class="form-control" asp-items="ViewBag.UserId"></select>
+    </div>
+    <button type="submit" class="btn btn-primary">Add User</button>
+    <a asp-action="Details" asp-route-id="@ViewBag.GroupId" class="btn btn-secondary">Back to Details</a>
+</form>
