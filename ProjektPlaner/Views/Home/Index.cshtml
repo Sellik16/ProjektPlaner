@@ -1,117 +1,124 @@
-﻿@model List<DateTime>
+﻿@model List<ProjektPlaner.Models.CalendarDayViewModel>
+
 @{
-    // Pobierz listę świąt z ViewData
-    var holidays = ViewData["Holidays"] as List<DateTime> ?? new List<DateTime>();
+    ViewData["Title"] = "Kalendarz";
+    var today = DateTime.Today;
+
+    // Funkcja pomocnicza: przypisanie klasy CSS do dnia
+    Func<ProjektPlaner.Models.CalendarDayViewModel, string> GetDayClass = day => day.EventName != null ? "event-day" : "";
 }
 
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="utf-8">
-    <title>Kalendarz - Obecny Miesiąc</title>
-    <link href="#" rel="stylesheet" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kalendarz - @today.ToString("MMMM yyyy")</title>
     <style>
         table {
             width: 100%;
             border-collapse: collapse;
         }
+
         th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
+            border: 1px solid #ddd;
             text-align: center;
+            vertical-align: top;
+            height: 100px;
+            width: 14.28%;
+            padding: 5px;
+            font-size: 14px;
         }
+
         th {
             background-color: #f8f8f8;
+            font-weight: bold;
         }
-        .weekend {
-            background-color: #f0f0f0;
-            color: #a00;
+
+        .event-day {
+            background-color: #cce5ff; /* Niebieskie tło */
+            color: #004085;
+            font-weight: bold;
         }
-        .holiday {
-            background-color: #ffeeba;
-            color: #d9534f;
+
+        .day-number {
             font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <header class="mb-4">
-            <h1 class="text-center">Kalendarz na @DateTime.Now.ToString("MMMM yyyy")</h1>
-        </header>
+    <h1 class="text-center">Kalendarz na @today.ToString("MMMM yyyy")</h1>
 
-        <main>
-            <table>
-                <thead>
+    <table>
+        <thead>
+            <tr>
+                <th>Pon</th>
+                <th>Wt</th>
+                <th>Śr</th>
+                <th>Czw</th>
+                <th>Pt</th>
+                <th>Sob</th>
+                <th>Nd</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                int currentDayOfWeek = (int)new DateTime(today.Year, today.Month, 1).DayOfWeek;
+                currentDayOfWeek = currentDayOfWeek == 0 ? 6 : currentDayOfWeek - 1;
+
+                int totalDays = Model.Count;
+                int dayIndex = 0;
+
+                // Pierwszy tydzień
+                <tr>
+                    @for (int i = 0; i < 7; i++)
+                    {
+                        if (i < currentDayOfWeek)
+                        {
+                            <td></td>
+                        }
+                        else
+                        {
+                            var day = Model[dayIndex];
+                            <td class="@GetDayClass(day)">
+                                <div class="day-number">@day.Date.Day</div>
+                                @if (day.EventName != null)
+                                {
+                                    <div>@day.EventName</div>
+                                }
+                            </td>
+                            dayIndex++;
+                        }
+                    }
+                </tr>
+
+                // Kolejne tygodnie
+                while (dayIndex < totalDays)
+                {
                     <tr>
-                        <th>Pon</th>
-                        <th>Wt</th>
-                        <th>Śr</th>
-                        <th>Czw</th>
-                        <th>Pt</th>
-                        <th class="weekend">Sob</th>
-                        <th class="weekend">Nd</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @{
-                        int currentDayOfWeek = (int)Model[0].DayOfWeek;
-                        currentDayOfWeek = currentDayOfWeek == 0 ? 6 : currentDayOfWeek - 1;
-                        int dayIndex = 0;
-
-                        // Pierwszy tydzień
-                        <tr>
-                            @for (int i = 0; i < currentDayOfWeek; i++)
+                        @for (int i = 0; i < 7; i++)
+                        {
+                            if (dayIndex < totalDays)
+                            {
+                                var day = Model[dayIndex];
+                                <td class="@GetDayClass(day)">
+                                    <div class="day-number">@day.Date.Day</div>
+                                    @if (day.EventName != null)
+                                    {
+                                        <div>@day.EventName</div>
+                                    }
+                                </td>
+                                dayIndex++;
+                            }
+                            else
                             {
                                 <td></td>
                             }
-
-                            @while (dayIndex < Model.Count && currentDayOfWeek < 7)
-                            {
-                                var day = Model[dayIndex];
-                                var isWeekend = day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday;
-                                var isHoliday = holidays.Contains(day);
-
-                                <td class="@(isHoliday ? "holiday" : (isWeekend ? "weekend" : ""))">
-                                    @day.Day
-                                </td>
-                                dayIndex++;
-                                currentDayOfWeek++;
-                            }
-                        </tr>
-
-                        // Pozostałe tygodnie
-                        while (dayIndex < Model.Count)
-                        {
-                            <tr>
-                                @for (int i = 0; i < 7; i++)
-                                {
-                                    if (dayIndex < Model.Count)
-                                    {
-                                        var day = Model[dayIndex];
-                                        var isWeekend = day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday;
-                                        var isHoliday = holidays.Contains(day);
-
-                                        <td class="@(isHoliday ? "holiday" : (isWeekend ? "weekend" : ""))">
-                                            @day.Day
-                                        </td>
-                                        dayIndex++;
-                                    }
-                                    else
-                                    {
-                                        <td></td>
-                                    }
-                                }
-                            </tr>
                         }
-                    }
-                </tbody>
-            </table>
-        </main>
-
-        <footer class="mt-5 text-center">
-            <p>&copy; 2024 Planer. Wszystkie prawa zastrzeżone.</p>
-        </footer>
-    </div>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
 </body>
 </html>

@@ -1,35 +1,94 @@
 using Microsoft.AspNetCore.Mvc;
+using ProjektPlaner.Data;
 using ProjektPlaner.Models;
 using System.Diagnostics;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace ProjektPlaner.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
         {
             _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            // Pobierz aktualn¹ datê
             var today = DateTime.Today;
-
-            // Liczba dni w bie¿¹cym miesi¹cu
             int daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
 
-            // Tworzenie modelu zawieraj¹cego wszystkie dni miesi¹ca
+            var calendarElements = await _context.CalendarElement
+                .Where(e => e.StartDate.Year == today.Year && e.StartDate.Month == today.Month)
+                .ToListAsync();
+
             var calendarDays = Enumerable.Range(1, daysInMonth)
-                                         .Select(day => new DateTime(today.Year, today.Month, day))
-                                         .ToList();
+                .Select(day => new CalendarDayViewModel
+                {
+                    Date = new DateTime(today.Year, today.Month, day),
+                    EventName = calendarElements
+                        .Where(e => e.StartDate.Day == day)
+                        .Select(e => e.Name)
+                        .FirstOrDefault()
+                })
+                .ToList();
 
             return View(calendarDays);
         }
 
+
+
+
+
+        public async Task<IActionResult> Calendar()
+        {
+            // Pobieranie ID aktualnego u¿ytkownika
+            string currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                // Jeœli u¿ytkownik nie jest zalogowany, zwróæ pust¹ listê
+                return View(new List<CalendarElement>());
+            }
+
+            // Pobierz ID grup, do których nale¿y u¿ytkownik
+            var userGroupIds = await _context.CalendarGroup
+                .Where(g => g.FounderId == currentUserId
+                         || g.Users.Any(u => u.Id == currentUserId)
+                         || g.Administrators.Any(a => a.Id == currentUserId))
+                .Select(g => g.Id)
+                .ToListAsync();
+
+            // Pobierz elementy kalendarza powi¹zane z u¿ytkownikiem lub grupami
+            var calendarElements = await _context.CalendarElement
+                .Include(e => e.Group)
+                .Include(e => e.User)
+                .Where(e => e.UserId == currentUserId
+                         || (e.GroupId.HasValue && userGroupIds.Contains(e.GroupId.Value)))
+                .ToListAsync();
+
+            // Pobierz bie¿¹cy miesi¹c
+            var today = DateTime.Today;
+            int daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
+
+            // Przygotuj listê dni miesi¹ca
+            var calendarDays = Enumerable.Range(1, daysInMonth)
+                                         .Select(day => new DateTime(today.Year, today.Month, day))
+                                         .ToList();
+
+            // Przekazanie danych do ViewData
+            ViewData["CalendarDays"] = calendarDays;
+            ViewData["CalendarElements"] = calendarElements;
+
+            return View();
+        }
 
         public IActionResult Privacy()
         {
