@@ -57,6 +57,7 @@ namespace ProjektPlaner.Controllers
 
             var calendarElement = await _context.CalendarElement
                 .Include(c => c.User)
+                .Include(e => e.Group)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (calendarElement == null)
             {

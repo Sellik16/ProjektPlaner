@@ -114,7 +114,6 @@ namespace ProjektPlaner.Controllers
             {
                 return NotFound();
             }
-            ViewData["FounderId"] = new SelectList(_context.Users, "Id", "Email", calendarGroup.FounderId);
             return View(calendarGroup);
         }
 
@@ -150,7 +149,6 @@ namespace ProjektPlaner.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["FounderId"] = new SelectList(_context.Users, "Id", "Id", calendarGroup.FounderId);
             return View(calendarGroup);
         }
 
@@ -164,6 +162,8 @@ namespace ProjektPlaner.Controllers
 
             var calendarGroup = await _context.CalendarGroup
                 .Include(c => c.Founder)
+                .Include(c => c.Users)
+                .Include(c => c.Administrators)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (calendarGroup == null)
             {
