@@ -2,7 +2,9 @@
 {
     public class CalendarDayViewModel
     {
-        public DateTime Date { get; set; } // Data tego dnia w kalendarzu
-        public string? EventName { get; set; } // Nazwa wydarzenia, które odbywa się tego dnia
+        public DateTime Date { get; set; }
+        public List<string> EventNames { get; set; } = new List<string>();
     }
+
+
 }

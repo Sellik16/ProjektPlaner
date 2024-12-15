@@ -22,29 +22,87 @@ namespace ProjektPlaner.Controllers
 
         public async Task<IActionResult> Index()
         {
+            // Pobieramy bie¿¹cy miesi¹c
             var today = DateTime.Today;
             int daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
 
-            var calendarElements = await _context.CalendarElement
-                .Where(e => e.StartDate.Year == today.Year && e.StartDate.Month == today.Month)
+            string currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Jeœli u¿ytkownik nie jest zalogowany
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                // Pobieramy ID grupy "wszyscy"
+                var everyoneGroupId = await _context.CalendarGroup
+                    .Where(g => g.Name == "wszyscy")
+                    .Select(g => g.Id)
+                    .FirstOrDefaultAsync();
+
+                // Pobieramy tylko wydarzenia z grupy "wszyscy"
+                var calendarElements = await _context.CalendarElement
+                    .Where(e => e.GroupId == everyoneGroupId)
+                    .ToListAsync();
+
+                // Tworzymy kalendarz dla bie¿¹cego miesi¹ca
+                var calendarDays = Enumerable.Range(1, daysInMonth)
+                    .Select(day =>
+                    {
+                        var dayDate = new DateTime(today.Year, today.Month, day);
+                        var eventsForDay = calendarElements
+                            .Where(e => e.StartDate.Date == dayDate)
+                            .Select(e => e.Name)
+                            .ToList();
+
+                        return new CalendarDayViewModel
+                        {
+                            Date = dayDate,
+                            EventNames = eventsForDay
+                        };
+                    })
+                    .ToList();
+
+
+                return View(calendarDays);
+            }
+
+            // Obs³uga zalogowanego u¿ytkownika
+            var userGroupIds = await _context.CalendarGroup
+                .Where(g => g.FounderId == currentUserId
+                         || g.Users.Any(u => u.Id == currentUserId)
+                         || g.Administrators.Any(a => a.Id == currentUserId))
+                .Select(g => g.Id)
                 .ToListAsync();
 
-            var calendarDays = Enumerable.Range(1, daysInMonth)
-                .Select(day => new CalendarDayViewModel
+            // Pobieranie wydarzeñ dla u¿ytkownika i jego grup
+            var calendarElementsForUser = await _context.CalendarElement
+                .Include(e => e.Group)
+                .Include(e => e.User)
+                .Where(e => e.UserId == currentUserId
+                         || (e.GroupId.HasValue && userGroupIds.Contains(e.GroupId.Value)))
+                .ToListAsync();
+
+            // Tworzenie kalendarza z dniami miesi¹ca
+            // Pobraæ wszystkie wydarzenia na dany dzieñ
+            var calendarDaysWithEvents = Enumerable.Range(1, daysInMonth)
+                .Select(day =>
                 {
-                    Date = new DateTime(today.Year, today.Month, day),
-                    EventName = calendarElements
-                        .Where(e => e.StartDate.Day == day)
+                    var dayDate = new DateTime(today.Year, today.Month, day);
+                    var eventsForDay = calendarElementsForUser
+                        .Where(e => e.StartDate.Date == dayDate)
                         .Select(e => e.Name)
-                        .FirstOrDefault()
+                        .ToList();
+
+                    return new CalendarDayViewModel
+                    {
+                        Date = dayDate,
+                        EventNames = eventsForDay
+                    };
                 })
                 .ToList();
 
-            return View(calendarDays);
+
+
+            return View(calendarDaysWithEvents);
         }
-
-
-
 
 
         public async Task<IActionResult> Calendar()

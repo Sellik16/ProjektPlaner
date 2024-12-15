@@ -3,9 +3,6 @@
 @{
     ViewData["Title"] = "Kalendarz";
     var today = DateTime.Today;
-
-    // Funkcja pomocnicza: przypisanie klasy CSS do dnia
-    Func<ProjektPlaner.Models.CalendarDayViewModel, string> GetDayClass = day => day.EventName != null ? "event-day" : "";
 }
 
 <!DOCTYPE html>
@@ -36,10 +33,26 @@
         }
 
         .event-day {
-            background-color: #cce5ff; /* Niebieskie tło */
-            color: #004085;
-            font-weight: bold;
+            /* Subtelny sygnał, że w danym dniu są wydarzenia,
+               np. delikatna obwódka komórki */
+            border: 1px solid #cce5ff;
+            background-color: #fefefe;
+            padding: 5px;
         }
+
+        /* Styl dla pojedynczego wydarzenia */
+        .event-entry {
+            border: 1px solid #004085;
+            background-color: #d7e9ff; /* jaśniejszy, ale bardziej widoczny odcień niebieskiego */
+            padding: 4px 6px;
+            margin-bottom: 4px;
+            border-radius: 3px;
+            font-weight: bold; /* pogrubiony tekst dla lepszej widoczności */
+            display: block;
+            text-align: left;
+            color: #000; /* zapewnij ciemny kolor czcionki dla kontrastu */
+        }
+
 
         .day-number {
             font-weight: bold;
@@ -63,8 +76,9 @@
         </thead>
         <tbody>
             @{
-                int currentDayOfWeek = (int)new DateTime(today.Year, today.Month, 1).DayOfWeek;
-                currentDayOfWeek = currentDayOfWeek == 0 ? 6 : currentDayOfWeek - 1;
+                var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
+                int currentDayOfWeek = ((int)firstDayOfMonth.DayOfWeek + 6) % 7;
+
 
                 int totalDays = Model.Count;
                 int dayIndex = 0;
@@ -75,19 +89,28 @@
                     {
                         if (i < currentDayOfWeek)
                         {
-                            <td></td>
+                            <td></td> <!-- Puste komórki przed 1 dniem miesiąca -->
+                        }
+                        else if (dayIndex < totalDays) 
+                        {
+                            var day = Model[dayIndex];
+                            <td>
+                                <div class="day-number">@day.Date.Day</div>
+                                @if (day.EventNames.Any())
+                                {
+                                    foreach (var eventName in day.EventNames)
+                                    {
+                                        <div class="event-entry">@eventName</div>
+                                    }
+                                }
+                            </td>
+
+
+                            dayIndex++;
                         }
                         else
                         {
-                            var day = Model[dayIndex];
-                            <td class="@GetDayClass(day)">
-                                <div class="day-number">@day.Date.Day</div>
-                                @if (day.EventName != null)
-                                {
-                                    <div>@day.EventName</div>
-                                }
-                            </td>
-                            dayIndex++;
+                            <td></td> <!-- Puste komórki po zakończeniu dni miesiąca -->
                         }
                     }
                 </tr>
@@ -101,18 +124,22 @@
                             if (dayIndex < totalDays)
                             {
                                 var day = Model[dayIndex];
-                                <td class="@GetDayClass(day)">
+                                <td class="@(day.EventNames.Any() ? "event-day" : "")">
                                     <div class="day-number">@day.Date.Day</div>
-                                    @if (day.EventName != null)
+                                    @if (day.EventNames.Any())
                                     {
-                                        <div>@day.EventName</div>
+                                        foreach (var eventName in day.EventNames)
+                                        {
+                                            <div class="event-entry">@eventName</div>
+                                        }
                                     }
+
                                 </td>
                                 dayIndex++;
                             }
                             else
                             {
-                                <td></td>
+                                <td></td> <!-- Puste komórki po zakończeniu dni miesiąca -->
                             }
                         }
                     </tr>
