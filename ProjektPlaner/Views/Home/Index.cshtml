@@ -1,16 +1,16 @@
 ﻿@model List<ProjektPlaner.Models.CalendarDayViewModel>
 
 @{
-    ViewData["Title"] = "Kalendarz";
+    ViewData["Title"] = "Calendar";
     var today = DateTime.Today;
 }
 
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kalendarz - @today.ToString("MMMM yyyy")</title>
+    <title>Calendar - @today.ToString("MMMM yyyy", System.Globalization.CultureInfo.CreateSpecificCulture("en-US"))</title>
     <style>
         table {
             width: 100%;
@@ -34,7 +34,7 @@
 
         .event-day {
             /* Subtelny sygnał, że w danym dniu są wydarzenia,
-               np. delikatna obwódka komórki */
+                       np. delikatna obwódka komórki */
             border: 1px solid #cce5ff;
             background-color: #fefefe;
             padding: 5px;
@@ -43,16 +43,15 @@
         /* Styl dla pojedynczego wydarzenia */
         .event-entry {
             border: 1px solid #004085;
-            background-color: #d7e9ff; /* jaśniejszy, ale bardziej widoczny odcień niebieskiego */
+            background-color: #d7e9ff;
             padding: 4px 6px;
             margin-bottom: 4px;
             border-radius: 3px;
-            font-weight: bold; /* pogrubiony tekst dla lepszej widoczności */
+            font-weight: bold;
             display: block;
             text-align: left;
-            color: #000; /* zapewnij ciemny kolor czcionki dla kontrastu */
+            color: #000;
         }
-
 
         .day-number {
             font-weight: bold;
@@ -73,25 +72,26 @@
 
     <h1 class="text-center">
         <a href="@Url.Action("Index", new { month = prevMonthDate.Month, year = prevMonthDate.Year })" style="text-decoration: none;">&laquo;</a>
-        Kalendarz na @currentDisplayedDate.ToString("MMMM yyyy", CultureInfo.CreateSpecificCulture("pl-PL"))
+        Calendar for @currentDisplayedDate.ToString("MMMM yyyy", CultureInfo.CreateSpecificCulture("en-US"))
         <a href="@Url.Action("Index", new { month = nextMonthDate.Month, year = nextMonthDate.Year })" style="text-decoration: none;">&raquo;</a>
     </h1>
 
     <table>
         <thead>
             <tr>
-                <th>Pon</th>
-                <th>Wt</th>
-                <th>Śr</th>
-                <th>Czw</th>
-                <th>Pt</th>
-                <th>Sob</th>
-                <th>Nd</th>
+                <th>Mon</th>
+                <th>Tue</th>
+                <th>Wed</th>
+                <th>Thu</th>
+                <th>Fri</th>
+                <th>Sat</th>
+                <th>Sun</th>
             </tr>
         </thead>
         <tbody>
             @{
-                var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
+                var firstDayOfMonth = new DateTime(currentDisplayedYear, currentDisplayedMonth, 1);
+                // Obliczanie kolumny, w której zaczyna się pierwszy dzień miesiąca
                 int currentDayOfWeek = ((int)firstDayOfMonth.DayOfWeek + 6) % 7;
 
 
@@ -106,7 +106,7 @@
                         {
                             <td></td> <!-- Puste komórki przed 1 dniem miesiąca -->
                         }
-                        else if (dayIndex < totalDays) 
+                        else if (dayIndex < totalDays)
                         {
                             var day = Model[dayIndex];
                             <td>
@@ -119,8 +119,6 @@
                                     }
                                 }
                             </td>
-
-
                             dayIndex++;
                         }
                         else
@@ -148,7 +146,6 @@
                                             <div class="event-entry">@eventName</div>
                                         }
                                     }
-
                                 </td>
                                 dayIndex++;
                             }
